@@ -70,7 +70,6 @@ def check_response(response):
         raise KeyError("Нет ключа 'current_date'")
     if not isinstance(response["homeworks"], list):
         raise TypeError("Данные приходят не в виде списка")
-
     return response.get("homeworks")
 
 
@@ -103,7 +102,6 @@ def main():
     if not check_tokens():
         logging.critical("Отсутствует токен")
         sys.exit()
-
     try:
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
     except Exception as error:
@@ -112,7 +110,6 @@ def main():
 
     timestamp = int(time.time())
     previous_message = ""
-
     while True:
         try:
             response = get_api_answer(timestamp)
@@ -124,7 +121,6 @@ def main():
                                                  previous_message)
             else:
                 logging.debug("Нет новых данных")
-
         except ConnectionError as error:
             message = f"Ошибка соединения: {error}"
             logging.exception(message)
@@ -137,7 +133,6 @@ def main():
             message = f"Сбой в работе программы: {error}"
             logging.exception(message)
             previous_message = check_message(bot, message, previous_message)
-
         finally:
             time.sleep(RETRY_PERIOD)
 
