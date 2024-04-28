@@ -1,8 +1,10 @@
+"""Telegram Bot."""
 import logging
 import os
 import sys
 import time
 from http import HTTPStatus
+
 import requests
 import telegram
 from dotenv import load_dotenv
@@ -26,7 +28,16 @@ HOMEWORK_VERDICTS = {
 
 def check_tokens():
     """Проверяет доступность переменных окружения."""
-    return PRACTICUM_TOKEN and TELEGRAM_TOKEN and TELEGRAM_CHAT_ID
+    env_vars = {
+        'PRACTICUM_TOKEN': PRACTICUM_TOKEN,
+        'TELEGRAM_TOKEN': TELEGRAM_TOKEN,
+        'TELEGRAM_CHAT_ID': TELEGRAM_CHAT_ID
+    }
+    empty_tokens = []
+    for key, value in env_vars.items():
+        if not value:
+            empty_tokens.append(key)
+    return empty_tokens
 
 
 def send_message(bot, message):
@@ -53,9 +64,8 @@ def get_api_answer(timestamp):
         )
     except requests.RequestException as error:
         raise ConnectionError(f"Ошибка при запросе к API: {error}")
-    status_code = homework_status.status_code
-    if status_code != HTTPStatus.OK:
-        raise ConnectionError(f"Ответ сервера: {status_code}")
+    if homework_status.status_code != HTTPStatus.OK:
+        raise ConnectionError(f"Ответ сервера: {homework_status.status_code}")
     return homework_status.json()
 
 
@@ -68,9 +78,10 @@ def check_response(response):
         raise KeyError("Нет ключа 'homeworks'")
     if "current_date" not in response:
         raise KeyError("Нет ключа 'current_date'")
-    if not isinstance(response["homeworks"], list):
+    homeworks = response["homeworks"]
+    if not isinstance(homeworks, list):
         raise TypeError("Данные приходят не в виде списка")
-    return response.get("homeworks")
+    return homeworks
 
 
 def parse_status(homework):
@@ -99,15 +110,15 @@ def check_message(bot, message, previous_message):
 
 def main():
     """Основная логика работы бота."""
-    if not check_tokens():
-        logging.critical("Отсутствует токен")
+    empty_tokens = check_tokens()
+    if empty_tokens:
+        logging.critical(f'Не найдены токены: {" ".join(empty_tokens)}')
         sys.exit()
     try:
         bot = telegram.Bot(token=TELEGRAM_TOKEN)
     except Exception as error:
         logging.critical(f"Ошибка при создании экземпляра Bot(): {error}")
         sys.exit()
-
     timestamp = int(time.time())
     previous_message = ""
     while True:
