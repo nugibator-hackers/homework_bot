@@ -123,9 +123,7 @@ def main():
     previous_message = ""
     while True:
         try:
-            response = get_api_answer(timestamp)
-            timestamp = response.get("current_date", timestamp)
-            homework = check_response(response)
+            homework = check_response(get_api_answer(timestamp))
             if homework:
                 message = parse_status(homework[0])
                 previous_message = check_message(bot, message,
